@@ -1,9 +1,12 @@
 package com.example.curious_project.dao;
 
 import com.example.curious_project.model.User;
+import org.springframework.data.domain.Example;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository
-public interface Repo extends JpaRepository<User,String> {
+import java.util.Optional;
+
+public interface UserRepo extends JpaRepository<User, String> {
+    User findByUserId(String sessionId);
 }

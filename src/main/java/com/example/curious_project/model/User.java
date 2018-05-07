@@ -1,21 +1,28 @@
 package com.example.curious_project.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.sql.Timestamp;
 
 @Entity
 public class User {
-    private Long id;
     @Id
+    @Column(name = "user_Id")
+    String userId;
+
+    @Column(name = "first_name")
     String firstName;
+
+    @Column(name = "last_name")
     String lastName;
 
-    public Long getId() {
-        return id;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getFirstName() {
