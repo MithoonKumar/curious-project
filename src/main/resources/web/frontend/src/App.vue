@@ -1,11 +1,11 @@
 <template>
-  <div id="app" v-on:click="show">
+  <div id="app">
     <router-view></router-view>
   </div>
 </template>
 
 <script>
-import intro from './Intro.vue'; //For showing loading
+import intro from './Intro.vue'; //This will show loading gif
 import login from './Login.vue';//Through this page user can login and click on register tab
 import register from './Registration.vue'//Registration page
 import user from './User.vue'//User specific page
@@ -16,14 +16,9 @@ export default {
     }
   },
   methods: {
-    show () {
-      console.log("consoling the state", this.$store.state);
-    }
+
   },
   computed: {
-    state () {
-      return this.$store.state;
-    }
   },
   mounted () {
     this.$router.push({path:'/intro'});

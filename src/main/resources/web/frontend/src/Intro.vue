@@ -5,12 +5,11 @@
 <script>
 export default {
   mounted () {
-    console.log("The page is mounted now", this.$http);
     this.$http.post('/home', {}, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
-      if("body" in data && "id" in data.body) {
-        this.$router.push({path:'/user'});
-      }
+      this.$store.commit('changeUserData', data.body);
+      this.$router.push({path:'/user'});
     }).catch(function (err) {
+      console.log("could not get any user");
       this.$router.push({path:'/login'});
     });
   }

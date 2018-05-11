@@ -2,11 +2,9 @@
   <div class="container">
     <div class="login-form-container">
       <p class="title">My Page</p>
-      <form>
-        <input class="input-box" type="text" name="emailId" placeholder="Email Address">
-        <input class="input-box" type="text" name="password" placeholder="Password">
+        <input class="input-box" v-model="userEmail" type="text" name="emailId" placeholder="Email Address">
+        <input class="input-box" type="password" v-model="userPwd" name="password" placeholder="Password">
         <button class="submit-button" v-on:click="sendAuthentication">Sign in</button>
-      </form>
       <span class ="membership-text">Not a member ?</span>
       <router-link to="/register" class="redirection">Join Now</router-link>
     </div>
@@ -16,7 +14,22 @@
 export default {
   methods: {
     sendAuthentication: function() {
-      console.log("Ready for sending details");
+      var postData = {
+        userEmail: this.userEmail,
+        userPwd: this.userPwd
+      }
+      this.$http.post('/loginCredentials', postData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
+        this.$store.commit('changeUserData', data.body);
+        this.$router.push({path:'/user'});
+      }).catch(function (err) {
+        console.log("could not get any user", err);
+      });
+    }
+  },
+  data: function () {
+    return {
+      userEmail: "",
+      userPwd: ""
     }
   }
 }
@@ -55,7 +68,7 @@ export default {
   border: 1px solid grey;
   border-radius: 4px;
   padding-left: 10px;
-  padding-top: 5px;
+  padding-top: 10px;
   padding-bottom: 0px;
   margin-top: 20px;
   box-sizing: border-box;

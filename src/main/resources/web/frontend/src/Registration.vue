@@ -1,23 +1,63 @@
 <template>
   <div class="container">
     <div class="form-container">
-      <form action="">
         <p class="text">First name</p>
-        <input class="input-box" type="text" name="firstName">
+        <input class="input-box" v-model="firstName" type="text" name="firstName">
         <p class="text">Last name</p>
-        <input class="input-box" type="text" name="lastName">
+        <input class="input-box" v-model="lastName" type="text" name="lastName">
         <p class="text">Email</p>
-        <input class="input-box" type="email" name="emailId">
+        <input class="input-box" v-model="userEmail" type="email" name="emailId">
         <p class="text">Password</p>
-        <input class="input-box" type="password" name="password">
-        <input class="submit-button" type="button" value="Agree & Join">
-      </form>
+        <input class="input-box" v-model="userPwd" type="password" name="password">
+        <p class="text">Upload Your Profile Pic</p>
+        <input id="profile-pic" type="file" @change="onFileChange" name="profilePic" accept="image/*">
+        <input class="submit-button" type="button" v-on:click="signUp" value="Agree & Join">
     </div>
   </div>
 </template>
 
 <script>
 export default {
+  methods: {
+    signUp: function() {
+      var postData = {
+        firstName: this.firstName,
+        lastName: this.lastName,
+        userEmail: this.userEmail,
+        userPwd: this.userPwd,
+        profilePic: this.profilePic
+      }
+      this.$http.post('/signUp', postData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
+        this.$router.push({path:'/login'});
+      }).catch(function (err) {
+        console.log("user could not sign up");
+      });
+    },
+    onFileChange: function(event) {
+      console.log("came here bro", event);
+      var files = event.target.files || event.dataTransfer.files;
+      if (!files.length)
+        return;
+      this.createImage(files[0]);
+    },
+    createImage: function (file) {
+      var reader = new FileReader();
+      reader.onload = (e) => {
+        console.log("consoling e", e);
+        this.profilePic = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  },
+  data: function(){
+    return {
+      userEmail: "",
+      userPwd: "",
+      firstName: "",
+      lastName: "",
+      profilePic: ""
+    }
+  }
 }
 </script>
 
@@ -62,6 +102,7 @@ export default {
   width: 100%;
   margin-bottom: 10px;
 }
+
 .submit-button {
   font-weight: bold;
   border-width: 1px;

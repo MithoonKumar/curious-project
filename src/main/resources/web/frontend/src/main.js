@@ -7,6 +7,7 @@ import Route from './route'
 
 Vue.use(VueResource);
 Vue.use(VueRouter);
+Vue.config.devtools = true;
 
 const router = new VueRouter({
   routes: Route,
