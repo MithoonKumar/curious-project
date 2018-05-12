@@ -3,23 +3,14 @@ package com.example.curious_project.model;
 public class UserData {
     private String name;
     private String email;
-    private String image;
-    private String dataImage;
+    private String imageLink;
 
-    public String getDataImage() {
-        return dataImage;
+    public String getImageLink() {
+        return imageLink;
     }
 
-    public void setDataImage(String dataImage) {
-        this.dataImage = dataImage;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
+    public void setImageLink(String imageLink) {
+        this.imageLink = imageLink;
     }
 
     public String getName() {
@@ -29,6 +20,7 @@ public class UserData {
     public void setName(String name) {
         this.name = name;
     }
+
 
     public String getEmail() {
         return email;

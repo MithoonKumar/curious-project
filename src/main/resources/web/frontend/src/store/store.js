@@ -7,14 +7,16 @@ export const store = new Vuex.Store({
   state :{
     userData: {
       name: "",
-      email: ""
+      email: "",
+      profilePic: ""
     }
   },
   mutations: {
     changeUserData (state, data) {
+      console.log("consoling data", data)
       state.userData.name = data.name;
       state.userData.email = data.email;
-      state.userData.profilePic = data.dataImage;
+      state.userData.profilePic = data.imageLink;
     }
   }
 });

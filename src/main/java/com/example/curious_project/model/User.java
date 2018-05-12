@@ -24,26 +24,15 @@ public class User {
     @Column(name = "last_name")
     String lastName;
 
-    @Column(name = "image")
-    byte [] image;
+    @Column(name = "image_link")
+    String imageLink;
 
-    @Column(name = "data_image")
-    String dataImage;
-
-    public String getDataImage() {
-        return dataImage;
+    public String getImageLink() {
+        return imageLink;
     }
 
-    public void setDataImage(String dataImage) {
-        this.dataImage = dataImage;
-    }
-
-    public byte[] getImage() {
-        return image;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
+    public void setImageLink(String imageLink) {
+        this.imageLink = imageLink;
     }
 
     public String getFirstName() {

@@ -10,12 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sun.misc.BASE64Decoder;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,8 +53,7 @@ public class RequestController {
             UserData userData = new UserData();
             userData.setName(user.getFirstName());
             userData.setEmail(user.getUserEmail());
-            byte [] byteImage = user.getImage();
-            userData.setDataImage(Base64.encode(byteImage));
+            userData.setImageLink(user.getImageLink());
             return userData;
         } else {
             response.setStatus(401);
@@ -74,13 +74,33 @@ public class RequestController {
             UserData userData = new UserData();
             userData.setName(user.getFirstName());
             userData.setEmail(user.getUserEmail());
-            byte [] byteImage = user.getImage();
-            userData.setDataImage(Base64.encode(byteImage));
+            userData.setImageLink(user.getImageLink());
             return userData;
         } else {
             response.setStatus(401);
             return null;
         }
+    }
+
+    @RequestMapping(method = RequestMethod.POST, value = "/uploadProfilePic/{email}")
+    @ResponseBody
+    public void uploadPic(@RequestParam("profilePic") MultipartFile multipartFile , @PathVariable String email) throws IOException {
+        User user = userService.getUser(email);
+        byte[] fileData = multipartFile.getBytes();
+        InputStream stream = new ByteArrayInputStream(fileData);
+        byte[] buffer = new byte[stream.available()];
+        stream.read(buffer);
+        String guId = java.util.UUID.randomUUID().toString();
+        File targetFile = new File("./src/main/resources/static/pics/"+ guId+multipartFile.getOriginalFilename());
+        if (targetFile.createNewFile()){
+            System.out.println("File is created!");
+        }else{
+            System.out.println("File already exists.");
+        }
+        OutputStream outStream = new FileOutputStream(targetFile);
+        outStream.write(buffer);
+        user.setImageLink("/pics/"+ guId+multipartFile.getOriginalFilename());
+        userService.saveUser(user);
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/signUp")
@@ -89,7 +109,6 @@ public class RequestController {
         String userPwd = body.get("userPwd");
         String firstName = body.get("firstName");
         String lastName = body.get("lastName");
-        String dataImage = body.get("profilePic");
         User user = userService.getUser(userEmail);
         if (user != null) {
             return;
@@ -99,9 +118,6 @@ public class RequestController {
         newUser.setLastName(lastName);
         newUser.setUserEmail(userEmail);
         newUser.setHashedPwd(HashedPwdGenerator.generateHash(userPwd));
-        BASE64Decoder decoder = new BASE64Decoder();
-        byte [] imageByte = decoder.decodeBuffer(dataImage);
-        newUser.setImage(imageByte);
         try {
             userService.saveUser(newUser);
         } catch (Exception e) {

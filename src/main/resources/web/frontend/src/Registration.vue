@@ -10,7 +10,7 @@
         <p class="text">Password</p>
         <input class="input-box" v-model="userPwd" type="password" name="password">
         <p class="text">Upload Your Profile Pic</p>
-        <input id="profile-pic" type="file" @change="onFileChange" name="profilePic" accept="image/*">
+        <input id="profile-pic" type="file" @change="onFileChange($event.target.files)" name="profilePic" accept="image/*">
         <input class="submit-button" type="button" v-on:click="signUp" value="Agree & Join">
     </div>
   </div>
@@ -24,29 +24,21 @@ export default {
         firstName: this.firstName,
         lastName: this.lastName,
         userEmail: this.userEmail,
-        userPwd: this.userPwd,
-        profilePic: this.profilePic
+        userPwd: this.userPwd
       }
       this.$http.post('/signUp', postData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
-        this.$router.push({path:'/login'});
       }).catch(function (err) {
         console.log("user could not sign up");
       });
+      this.$http.post('/uploadProfilePic/'+this.userEmail, this.formData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
+        this.$router.push({path:'/login'});
+      }).catch(function (err) {
+        console.log("user could not upload image");
+      });
     },
-    onFileChange: function(event) {
-      console.log("came here bro", event);
-      var files = event.target.files || event.dataTransfer.files;
-      if (!files.length)
-        return;
-      this.createImage(files[0]);
-    },
-    createImage: function (file) {
-      var reader = new FileReader();
-      reader.onload = (e) => {
-        console.log("consoling e", e);
-        this.profilePic = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    onFileChange: function(files) {
+      this.formData = new FormData();
+      this.formData.append("profilePic", files[0], files[0].name);
     }
   },
   data: function(){
@@ -55,7 +47,7 @@ export default {
       userPwd: "",
       firstName: "",
       lastName: "",
-      profilePic: ""
+      formData: ""
     }
   }
 }

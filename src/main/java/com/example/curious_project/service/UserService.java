@@ -27,7 +27,6 @@ public class UserService {
         user.setHashedPwd(hashedPwd);
         user.setFirstName(firstName);
         user.setLastName(lastName);
-        user.setImage(image);
         userRepo.save(user);
     }
 
