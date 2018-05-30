@@ -8,7 +8,8 @@ export const store = new Vuex.Store({
     userData: {
       name: "",
       email: "",
-      profilePic: ""
+      profilePic: "",
+      webSocket: "",
     }
   },
   mutations: {
@@ -17,6 +18,10 @@ export const store = new Vuex.Store({
       state.userData.name = data.name;
       state.userData.email = data.email;
       state.userData.profilePic = data.imageLink;
+    },
+    assignWebSocket (state, ws) {
+      console.log("consoling data", ws)
+      state.userData.webSocket = ws;
     }
   }
 });

@@ -26,6 +26,9 @@ public class RequestInterceptor extends HandlerInterceptorAdapter {
     }
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, *");
+
         return true;
 //        if(unAuthenticatedUrls.contains(request.getRequestURI()) && request.getMethod().equals("GET")) {
 //            return true;

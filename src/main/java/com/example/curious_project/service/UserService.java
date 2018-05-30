@@ -40,4 +40,9 @@ public class UserService {
         User user = userRepo.findBySessionId(sessionId);
         return user;
     }
+
+    public User getUserByFirstName (String name) {
+        User user = userRepo.findByFirstName(name);
+        return user;
+    }
 }

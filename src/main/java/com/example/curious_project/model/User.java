@@ -9,22 +9,16 @@ import java.sql.Timestamp;
 @Entity
 public class User {
     @Id
-    @Column(name = "user_email")
     String userEmail;
 
-    @Column(name = "hashed_pwd")
     String hashedPwd;
 
-    @Column(name = "session_id")
     String sessionId;
 
-    @Column(name = "first_name")
     String firstName;
 
-    @Column(name = "last_name")
     String lastName;
 
-    @Column(name = "image_link")
     String imageLink;
 
     public String getImageLink() {

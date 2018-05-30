@@ -5,13 +5,11 @@ import com.example.curious_project.Utils.HashedPwdGenerator;
 import com.example.curious_project.model.User;
 import com.example.curious_project.model.UserData;
 import com.example.curious_project.service.UserService;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import sun.misc.BASE64Decoder;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -25,11 +23,11 @@ public class RequestController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private UserLogin userLogin;
-
     @Value("${app.baseUrl}")
     private String baseUrl;
+
+    @Autowired
+    private UserLogin userLogin;
 
     @RequestMapping(method = RequestMethod.POST, value = "/home")
     @ResponseBody
@@ -125,6 +123,32 @@ public class RequestController {
             System.out.println(e.getMessage());
         }
     }
+
+    @RequestMapping(method = RequestMethod.POST, value = "/search")
+    @ResponseBody
+    public UserData search(@RequestBody Map<String, String> body) {
+        String userFirstName = body.get("name");
+        User user = userService.getUserByFirstName(userFirstName);
+        if (user == null) {
+            return null;
+        }
+        UserData searchedUser = new UserData();
+        searchedUser.setImageLink(user.getImageLink());
+        searchedUser.setEmail(user.getUserEmail());
+        return searchedUser;
+    }
+
+
+
+    @RequestMapping(value = "/pics/{id}")
+    @ResponseBody
+    public  byte[] getImage(@PathVariable("id") String id) throws IOException {
+        InputStream in1 =  new FileInputStream("./src/main/resources/static/pics/" + id);
+        byte[] targetArray = new byte[in1.available()];
+        in1.read(targetArray);
+       return  targetArray;
+    }
+
 
     @RequestMapping(method = RequestMethod.GET, value = {"/intro","/register","user","login"})
     public String redirect() {

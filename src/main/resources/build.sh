@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # install dependencies
 npm install
 

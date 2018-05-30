@@ -27,14 +27,15 @@ export default {
         userPwd: this.userPwd
       }
       this.$http.post('/signUp', postData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
+        this.$http.post('/uploadProfilePic/'+this.userEmail, this.formData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
+          this.$router.push({path:'/login'});
+        }).catch(function (err) {
+          console.log("user could not upload image");
+        });
       }).catch(function (err) {
         console.log("user could not sign up");
       });
-      this.$http.post('/uploadProfilePic/'+this.userEmail, this.formData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
-        this.$router.push({path:'/login'});
-      }).catch(function (err) {
-        console.log("user could not upload image");
-      });
+
     },
     onFileChange: function(files) {
       this.formData = new FormData();
