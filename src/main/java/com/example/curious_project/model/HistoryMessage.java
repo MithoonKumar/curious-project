@@ -1,6 +1,6 @@
 package com.example.curious_project.model;
 
-public class Message {
+public class HistoryMessage {
     private String from;
     private String text;
 

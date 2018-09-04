@@ -82,7 +82,7 @@ public class RequestController {
 
     @RequestMapping(method = RequestMethod.POST, value = "/uploadProfilePic/{email}")
     @ResponseBody
-    public void uploadPic(@RequestParam("profilePic") MultipartFile multipartFile , @PathVariable String email) throws IOException {
+    public void uploadPic(@RequestPart("profilePic") MultipartFile multipartFile , @PathVariable String email) throws IOException {
         User user = userService.getUser(email);
         byte[] fileData = multipartFile.getBytes();
         InputStream stream = new ByteArrayInputStream(fileData);

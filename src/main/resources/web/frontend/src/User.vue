@@ -34,29 +34,29 @@ export default {
     this.userData.name = this.$store.state.userData.name;
     this.userData.email = this.$store.state.userData.email;
     this.userData.profilePic = this.$store.state.userData.profilePic;
-    console.log("user vue is mounted");
-    this.ws = new WebSocket("wss://5b193ad3.ngrok.io/message");
+    this.ws = new WebSocket("wss://a0d360fe.ngrok.io/message");
     this.$store.commit('assignWebSocket', this.ws);
-    console.log("consoling websocket connection", this.ws);
     window._this = this;
     this.ws.onopen = function(data){
-      console.log("websocket connection opened", data);
       _this.sendSubscriptionMessage();
     };
     this.ws.onmessage = function(data) {
-      console.log("message received", data);
       var dataObject = JSON.parse(data.data);
       var senderEmail = dataObject.from;
+      _this.senderEmail = senderEmail;
+      _this.dataObject = dataObject;
       if (!_this.openChats.includes(senderEmail)) {
         _this.createMessageBox(senderEmail);
+        setTimeout(function(){
+           _this.fetchMessageHistory(_this.senderEmail, _this.userData.email);
+        }, 0);
+        return;
       }
-      process.nextTick(function(){
-        var chatContainer = document.getElementById(senderEmail).firstChild;
-        var pText = document.createElement("p");;
-        pText.textContent = senderEmail + ":" + dataObject.message;
-        chatContainer.appendChild(pText);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      });
+      if ("history" in dataObject) {
+          _this.prependMessageToChatBox(senderEmail, dataObject.chatFrom, dataObject.message);
+      } else {
+          _this.appendMessageToChatBox(senderEmail, dataObject.message);
+      }
     }
   },
   methods: {
@@ -69,8 +69,11 @@ export default {
         var message = {"messageType":"subscription","from":this.userData.email};
         this.ws.send(JSON.stringify(message));
     },
+    fetchMessageHistory(from, to){
+        var message = {"messageType":"history", "from": from, "to": to, "for": from};
+        this.ws.send(JSON.stringify(message));
+    },
     sendSearchText(){
-      console.log("text sent");
       var _this = this;
       var postData = {
         name: this.searchText
@@ -84,13 +87,34 @@ export default {
       });
     },
     message(){
-      console.log("clicked on message button");
       if (!this.openChats.includes(this.randomEmail)) {
         this.openChats.push(this.randomEmail);
+        _this = this;
+        setTimeout(function(){
+           _this.fetchMessageHistory(_this.randomEmail, _this.userData.email);
+        }, 0);
       }
     },
     createMessageBox(email){
       this.openChats.push(email);
+    },
+    appendMessageToChatBox(email, message){
+      var chatContainer = document.getElementById(email).firstChild;
+      var pText = document.createElement("p");;
+      pText.textContent = email + ":" + message;
+      chatContainer.appendChild(pText);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    },
+    prependMessageToChatBox(email, chatFrom, message){
+      var chatContainer = document.getElementById(email).firstChild;
+      var pText = document.createElement("p");;
+      pText.textContent = chatFrom + ":" + message;
+      if (!chatContainer.firstChild) {
+        chatContainer.appendChild(pText);
+      } else {
+        chatContainer.insertBefore(pText, chatContainer.firstChild);
+      }
+      chatContainer.scrollTop = chatContainer.scrollHeight;
     }
   },
   data() {
@@ -128,6 +152,7 @@ export default {
   float: right;
   background: #e1e9ee;
   margin-right: 100px;
+  border-radius: 10px;
 }
 
 .header {
@@ -153,6 +178,8 @@ export default {
   margin-left:10px;
   display: inline-block;
   float: left;
+  border: solid 1px black;
+  border-radius: 10px;
 }
 
 .profile-img {

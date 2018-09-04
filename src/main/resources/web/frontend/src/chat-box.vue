@@ -10,9 +10,7 @@ export default {
   methods :{
     sendMessage(event){
       this.destination = event.currentTarget.parentElement.id;
-      console.log("came inside to send message");
       var message = {userEmail: this.$store.state.userData.email, "messageType": "message", "destinationEmail":this.destination, message: this.chatInput};
-      console.log("consoling message to be sent", message);
       this.$store.state.userData.webSocket.send(JSON.stringify(message));
       var chatContainer = event.currentTarget.parentElement.firstChild;
       var pText = document.createElement("p");
@@ -48,11 +46,13 @@ export default {
   box-sizing: border-box;
   overflow-y: overlay;
   word-wrap: break-word;
+  padding: 10px;
 }
 
 .message-box {
   width: 200px;
   box-sizing: border-box;
   outline: none;
+  border-radius: 10px;
 }
 </style>

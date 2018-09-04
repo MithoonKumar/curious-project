@@ -6,13 +6,13 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-public class ConversationTable {
+public class ConversationData {
     @Id
     String identifier;
 
     String message;
 
-    String from;
+    String sender;
 
     public String getIdentifier() {
         return identifier;
@@ -30,11 +30,11 @@ public class ConversationTable {
         this.message = message;
     }
 
-    public String getFrom() {
-        return from;
+    public String getSender() {
+        return sender;
     }
 
-    public void setFrom(String from) {
-        this.from = from;
+    public void setSender(String sender) {
+        this.sender = sender;
     }
 }

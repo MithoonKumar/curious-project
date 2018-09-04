@@ -5,6 +5,7 @@ import org.springframework.web.socket.WebSocketSession;
 public class Client {
     private WebSocketSession clientSession;
     private String clientEmail;
+    private String sessionId;
 
     public WebSocketSession getClientSession() {
         return clientSession;
@@ -22,13 +23,21 @@ public class Client {
         this.clientEmail = clientEmail;
     }
 
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
     @Override
     public boolean equals(Object obj){
         if (obj == null){
             return false;
         }
         Client c = (Client) obj;
-        if (c.getClientSession().equals(this.clientSession)) {
+        if (c.getSessionId().equals(this.sessionId)) {
             return true;
         }
         return false;

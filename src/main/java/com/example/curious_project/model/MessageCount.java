@@ -10,7 +10,7 @@ public class MessageCount {
     @Id
     private String identifier;
 
-    private String totalMessages;
+    private Long totalMessages;
 
     public String getIdentifier() {
         return identifier;
@@ -20,11 +20,11 @@ public class MessageCount {
         this.identifier = identifier;
     }
 
-    public String getTotalMessages() {
+    public Long getTotalMessages() {
         return totalMessages;
     }
 
-    public void setTotalMessages(String totalMessages) {
+    public void setTotalMessages(Long totalMessages) {
         this.totalMessages = totalMessages;
     }
 }
