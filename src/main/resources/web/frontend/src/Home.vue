@@ -5,9 +5,10 @@
 <script>
 export default {
   mounted () {
-    this.$http.post('/home', {}, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
+    this.$http.get('/getUserInfo/info').then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
       this.$store.commit('changeUserData', data.body);
       this.$router.push({path:'/user'});
+      console.log(" ok Response for user info has been received", data.body);
     }).catch(function (err) {
       console.log("could not get any user");
       this.$router.push({path:'/login'});

@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import intro from './Intro.vue'; //This will show loading gif
+import intro from './Home.vue'; //This will show loading gif
 import login from './Login.vue';//Through this page user can login and click on register tab
 import register from './Registration.vue'//Registration page
 import user from './User.vue'//User specific page
@@ -21,7 +21,7 @@ export default {
   computed: {
   },
   mounted () {
-    this.$router.push({path:'/intro'});
+    this.$router.push({path:'/Home'});
   }
 }
 </script>

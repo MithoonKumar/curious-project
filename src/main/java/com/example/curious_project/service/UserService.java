@@ -30,16 +30,10 @@ public class UserService {
         userRepo.save(user);
     }
 
-    public void updateSessionId (String userEmail, String sessionId) {
-        User user = userRepo.findByUserEmail(userEmail);
-        user.setSessionId(sessionId);
-        userRepo.save(user);
-    }
-
-    public User getUserUsingSessionId (String sessionId) {
-        User user = userRepo.findBySessionId(sessionId);
-        return user;
-    }
+//    public User getUserUsingSessionId (String sessionId) {
+//        User user = userRepo.findBySessionId(sessionId);
+//        return user;
+//    }
 
     public User getUserByFirstName (String name) {
         User user = userRepo.findByFirstName(name);

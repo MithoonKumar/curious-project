@@ -1,5 +1,6 @@
 package com.example.curious_project.controller;
 
+import com.example.curious_project.SessionManager.JWTConfigurer;
 import com.example.curious_project.UserAuthentication.UserLogin;
 import com.example.curious_project.Utils.HashedPwdGenerator;
 import com.example.curious_project.model.User;
@@ -7,6 +8,7 @@ import com.example.curious_project.model.UserData;
 import com.example.curious_project.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,24 +31,15 @@ public class RequestController {
     @Autowired
     private UserLogin userLogin;
 
-    @RequestMapping(method = RequestMethod.POST, value = "/home")
+    @Autowired
+    private JWTConfigurer jwtConfigurer;
+
+    @RequestMapping(method = RequestMethod.GET, value = "/getUserInfo/info")
     @ResponseBody
     public UserData Home(HttpServletRequest request, HttpServletResponse response) {
-        Cookie cookie[] = request.getCookies();
-        String sessionId = "";
-        if (cookie != null) {
-            for (int i = 0;  i < cookie.length; i++) {
-                if (cookie[i].getName().equals("sessionId")) {
-                    sessionId = cookie[i].getValue();
-                    break;
-                }
-            }
-        }
-        if (sessionId.equals("")) {
-            response.setStatus(401);
-            return null;
-        }
-        User user = userService.getUserUsingSessionId(sessionId);
+
+        String userEmail = request.getAttribute("userEmail").toString();
+        User user = userService.getUser(userEmail);
         if (user != null) {
             UserData userData = new UserData();
             userData.setName(user.getFirstName());
@@ -64,11 +57,13 @@ public class RequestController {
     public UserData loginCredentials(@RequestBody Map<String, String> body, HttpServletRequest request, HttpServletResponse response, @RequestParam HashMap<String, String> params) {
         String userEmail = body.get("userEmail");
         String userPwd = body.get("userPwd");
-        User user = userLogin.login(userEmail, userPwd);
-        if (user != null) {
-            Cookie cookie = new Cookie("sessionId", user.getSessionId());
+        String jwt = userLogin.login(userEmail, userPwd);
+        if (jwt != null) {
+            Cookie cookie = new Cookie("authToken", jwt);
             cookie.setMaxAge(360000);
+            cookie.setHttpOnly(true);
             response.addCookie(cookie);
+            User user = userService.getUser(userEmail);
             UserData userData = new UserData();
             userData.setName(user.getFirstName());
             userData.setEmail(user.getUserEmail());
@@ -78,6 +73,16 @@ public class RequestController {
             response.setStatus(401);
             return null;
         }
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "/logout")
+    @ResponseBody
+    public String logoutUser(HttpServletRequest request, HttpServletResponse response) {
+        Cookie cookie = new Cookie("authToken", request.getAttribute("jwt").toString());
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
+        return "Successfully logged out";
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/uploadProfilePic/{email}")
@@ -150,8 +155,16 @@ public class RequestController {
     }
 
 
-    @RequestMapping(method = RequestMethod.GET, value = {"/intro","/register","user","login"})
-    public String redirect() {
-        return "redirect:" + baseUrl + "/index.html";
+    @RequestMapping(method = RequestMethod.GET, value = {"/home", "/", "/register", "/user", "/login"})
+    public String Home() {
+        return "redirect:/" + "home.html";
     }
+
+    @ResponseStatus(value= HttpStatus.NOT_FOUND)
+    @RequestMapping(value = "/404", method = RequestMethod.GET)
+    @ResponseBody
+    public String handleNotFound() {
+        return "default";
+    }
+
 }

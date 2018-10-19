@@ -1,14 +1,21 @@
 <template>
   <div class="container">
     <div class="header">
-      <button class="logout" v-on:click="logout">Log Out</button>
       <span class="user-name">{{userData.name}}</span>
-    </div>
-    <div class="personal-details">
-      <p class="profile-name">{{userData.name}}</p>
       <img class="profile-img" :src="userData.profilePic">
+      <button class="logout" v-on:click="logout">Log Out</button>
     </div>
-    <div class="other-profile" >
+    <div class="content-div">
+      <div class="daily-posts">
+      </div>
+      <div class="contacts-list">
+        <p class="contacts-title">Your Contacts</p>
+        <template v-for="user in contacts">
+                <Contact v-bind:name=user></Contact>
+        </template>
+      </div>
+    </div>
+    <!--div class="other-profile" >
       <input class="search-box" placeholder="Search Result" v-on:keyup.enter="sendSearchText" v-model="searchText"></input>
       <img class="random-img" :src="randomPic" v-bind:class="{ hide: !searchResult, show: searchResult }">
       <div class="buttons" v-bind:class="{ hide: !searchResult, show: searchResult }">
@@ -21,14 +28,16 @@
       <template v-for="user in openChats">
         <chatBox v-bind:id="user">{{user}}</chatBox>
       </template>
-    </div>
+    </div-->
   </div>
 </template>
 <script>
 import chatBox from "./chat-box.vue";
+import Contact from "./Contact.vue";
 export default {
   components: {
-          'chatBox': chatBox
+          'chatBox': chatBox,
+          'Contact': Contact
       },
   mounted () {
     this.userData.name = this.$store.state.userData.name;
@@ -61,10 +70,15 @@ export default {
   },
   methods: {
     logout(){
-      document.cookie = "sessionId" + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      this.$router.push({path:'/login'});
-      this.ws.close();
-    },
+      let _this = this;
+      this.$http.put('/logout', {}, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
+          console.log(data.body);
+          _this.ws.close();
+          _this.$router.push({path:'/login'});
+        }).catch(function (err) {
+          console.log("User could not be logged out");
+        });
+      },
     sendSubscriptionMessage(){
         var message = {"messageType":"subscription","from":this.userData.email};
         this.ws.send(JSON.stringify(message));
@@ -132,7 +146,8 @@ export default {
       searchText: "",
       randomPic: "",
       randomEmail: "",
-      openChats: []
+      openChats: [],
+      contacts: [ "Sachin", "Dhoni"]
     }
   }
 
@@ -141,50 +156,70 @@ export default {
 
 <style scoped>
 .container {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  width: 100%;
-}
-
-.logout {
-  font-size: 20px;
-  padding: 10px;
-  display: inline-block;
-  float: right;
-  background: #e1e9ee;
-  margin-right: 100px;
-  border-radius: 10px;
 }
 
 .header {
   background: #283e4a;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  width: 100%;
-  display: inline-block;
+  display: flex;
+  box-sizing: border-box;
+  flex-grow: 0;
+  padding: 10px 20% 10px 20%;
 }
+
+.logout {
+  font-size: 20px;
+  background: #e1e9ee;
+  border-radius: 10px;
+  margin-left: 10px;
+  cursor: pointer;
+  outline: none;
+}
+
 
 .user-name {
-  margin-right: 20px;
   font-size: 30px;
+  line-height: 60px;
   color: white;
-  float: right;
+  flex-grow: 20;
+  text-align: right;
+  padding-right: 10px
 }
 
-.profile-name {
-  margin-left: 20px;
-}
 
-.personal-details {
-  margin-left:10px;
-  display: inline-block;
-  float: left;
-  border: solid 1px black;
+.profile-img {
+  height: 60px;
+  width: 60px;
   border-radius: 10px;
 }
 
-.profile-img {
-  height: 200px;
-  width: 200px;
+.content-div {
+  display: flex;
+  flex-grow: 1;
+}
+
+.daily-posts {
+  flex-grow: 3;
+}
+
+.contacts-list {
+  border-left: solid 1px black;
+  flex-grow: 1;
+  flex-basis: 200px;
+  max-width: 200px;
+}
+
+.contacts-title {
+  margin: 0px;
+  padding: 5px;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: solid 1px black;
+}
+
+.contact {
 }
 
 .other-profile {

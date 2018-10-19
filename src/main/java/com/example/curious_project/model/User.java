@@ -13,8 +13,6 @@ public class User {
 
     String hashedPwd;
 
-    String sessionId;
-
     String firstName;
 
     String lastName;
@@ -47,14 +45,6 @@ public class User {
 
     public String getHashedPwd() {
         return hashedPwd;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
     }
 
     public void setHashedPwd(String hashedPwd) {
