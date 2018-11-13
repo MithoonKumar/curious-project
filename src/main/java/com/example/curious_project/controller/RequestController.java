@@ -3,9 +3,10 @@ package com.example.curious_project.controller;
 import com.example.curious_project.SessionManager.JWTConfigurer;
 import com.example.curious_project.UserAuthentication.UserLogin;
 import com.example.curious_project.Utils.HashedPwdGenerator;
-import com.example.curious_project.model.User;
-import com.example.curious_project.model.UserData;
-import com.example.curious_project.service.UserService;
+import com.example.curious_project.model.*;
+import com.example.curious_project.service.HandleRequests;
+import com.example.curious_project.service.MessageService;
+import com.example.curious_project.service.PersonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -17,13 +18,19 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 public class RequestController {
+
     @Autowired
-    private UserService userService;
+    private HandleRequests handleRequests;
+
+    @Autowired
+    private PersonService personService;
+
+    @Autowired
+    private MessageService messageService;
 
     @Value("${app.baseUrl}")
     private String baseUrl;
@@ -39,12 +46,22 @@ public class RequestController {
     public UserData Home(HttpServletRequest request, HttpServletResponse response) {
 
         String userEmail = request.getAttribute("userEmail").toString();
-        User user = userService.getUser(userEmail);
-        if (user != null) {
+        Person person = personService.findByUserEmail(userEmail);
+        if (person != null) {
             UserData userData = new UserData();
-            userData.setName(user.getFirstName());
-            userData.setEmail(user.getUserEmail());
-            userData.setImageLink(user.getImageLink());
+            userData.setName(person.getUserName());
+            userData.setEmail(person.getUserEmail());
+            userData.setImageLink(person.getImageLink());
+            for (String s : person.getReceivedFriendRequest()) {
+                Person personSendingRequest = personService.findByUserEmail(s);
+                User user =  new User(s, personSendingRequest.getUserName());
+                userData.getListOfRequestsReceived().add(user);
+            }
+            userData.setContacts(new HashSet<User>());
+            for (String friend : person.getFriends()) {
+                User user = new User(friend, personService.findByUserEmail(friend).getUserName());
+                userData.getContacts().add(user);
+            }
             return userData;
         } else {
             response.setStatus(401);
@@ -63,11 +80,21 @@ public class RequestController {
             cookie.setMaxAge(360000);
             cookie.setHttpOnly(true);
             response.addCookie(cookie);
-            User user = userService.getUser(userEmail);
+            Person person = personService.findByUserEmail(userEmail);
             UserData userData = new UserData();
-            userData.setName(user.getFirstName());
-            userData.setEmail(user.getUserEmail());
-            userData.setImageLink(user.getImageLink());
+            userData.setName(person.getUserName());
+            userData.setEmail(person.getUserEmail());
+            userData.setImageLink(person.getImageLink());
+            for (String s : person.getReceivedFriendRequest()) {
+                Person personSendingRequest = personService.findByUserEmail(s);
+                User user =  new User(s, personSendingRequest.getUserName());
+                userData.getListOfRequestsReceived().add(user);
+            }
+            userData.setContacts(new HashSet<User>());
+            for (String friend : person.getFriends()) {
+                User user = new User(friend, personService.findByUserEmail(friend).getUserName());
+                userData.getContacts().add(user);
+            }
             return userData;
         } else {
             response.setStatus(401);
@@ -88,7 +115,7 @@ public class RequestController {
     @RequestMapping(method = RequestMethod.POST, value = "/uploadProfilePic/{email}")
     @ResponseBody
     public void uploadPic(@RequestPart("profilePic") MultipartFile multipartFile , @PathVariable String email) throws IOException {
-        User user = userService.getUser(email);
+        Person person = personService.findByUserEmail(email);
         byte[] fileData = multipartFile.getBytes();
         InputStream stream = new ByteArrayInputStream(fileData);
         byte[] buffer = new byte[stream.available()];
@@ -102,8 +129,8 @@ public class RequestController {
         }
         OutputStream outStream = new FileOutputStream(targetFile);
         outStream.write(buffer);
-        user.setImageLink("/pics/"+ guId+multipartFile.getOriginalFilename());
-        userService.saveUser(user);
+        person.setImageLink("/pics/"+ guId+multipartFile.getOriginalFilename());
+        personService.savePerson(person);
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/signUp")
@@ -112,37 +139,19 @@ public class RequestController {
         String userPwd = body.get("userPwd");
         String firstName = body.get("firstName");
         String lastName = body.get("lastName");
-        User user = userService.getUser(userEmail);
-        if (user != null) {
+        Person person = personService.findByUserEmail(userEmail);
+        if (person != null) {
             return;
         }
-        User newUser = new User();
-        newUser.setFirstName(firstName);
-        newUser.setLastName(lastName);
-        newUser.setUserEmail(userEmail);
-        newUser.setHashedPwd(HashedPwdGenerator.generateHash(userPwd));
+        person = new Person(userEmail, firstName + " " + lastName);
+        person.setHashedPassword(HashedPwdGenerator.generateHash(userPwd));
         try {
-            userService.saveUser(newUser);
+            personService.savePerson(person);
         } catch (Exception e) {
             System.out.println("Error while saving user signup details");
             System.out.println(e.getMessage());
         }
     }
-
-    @RequestMapping(method = RequestMethod.POST, value = "/search")
-    @ResponseBody
-    public UserData search(@RequestBody Map<String, String> body) {
-        String userFirstName = body.get("name");
-        User user = userService.getUserByFirstName(userFirstName);
-        if (user == null) {
-            return null;
-        }
-        UserData searchedUser = new UserData();
-        searchedUser.setImageLink(user.getImageLink());
-        searchedUser.setEmail(user.getUserEmail());
-        return searchedUser;
-    }
-
 
 
     @RequestMapping(value = "/pics/{id}")
@@ -154,6 +163,54 @@ public class RequestController {
        return  targetArray;
     }
 
+    @RequestMapping(value = "/searchPerson/{searchText}", method = RequestMethod.GET)
+    @ResponseBody
+    public List<PersonData> getUserByText(@PathVariable("searchText") String searchText, HttpServletRequest request) {
+        Person personSearchingResult = personService.findByUserEmail(request.getAttribute("userEmail").toString());
+        List<Person> persons = new ArrayList<>();
+        persons = personService.findPersonByText(searchText);
+        List<PersonData> personsData = new ArrayList<>();
+        if (persons == null) {
+            return null;
+        }
+        for (Person person : persons) {
+            PersonData personData = new PersonData(person.getUserEmail(), person.getUserName());
+            int relationStatus = personService.determinePersonsRelation(personSearchingResult, person);
+            personData.setRelationStatus(relationStatus);
+            personsData.add(personData);
+        }
+        return personsData;
+    }
+
+    @RequestMapping(value = "/addFriendRequest/{email}", method = RequestMethod.POST)
+    @ResponseBody
+    public void addFriendRequest(@PathVariable("email") String email, HttpServletRequest request) throws IOException {
+        String requestSentTo = email;
+        String requestFrom = request.getAttribute("userEmail").toString();
+        handleRequests.addFriend(requestFrom, requestSentTo);
+    }
+
+    @RequestMapping(value = "/cancelFriendRequest/{email}", method = RequestMethod.POST)
+    @ResponseBody
+    public void cancelFriendRequest(@PathVariable("email") String email, HttpServletRequest request) throws IOException {
+        String requestCanceledBy = request.getAttribute("userEmail").toString();
+        String otherPartyEmail = email;
+        handleRequests.cancelFriend(requestCanceledBy, otherPartyEmail);
+    }
+
+    @RequestMapping(value = "/acceptFriendRequest/{email}", method = RequestMethod.POST)
+    @ResponseBody
+    public void acceptFriendRequest(@PathVariable("email") String email, HttpServletRequest request) throws IOException {
+        String sender = email;
+        String receiver = request.getAttribute("userEmail").toString();
+        handleRequests.acceptFriend(sender, receiver);
+    }
+
+    @RequestMapping(value = "/fetchMessageHistory/{from}/{to}", method = RequestMethod.GET)
+    @ResponseBody
+    public List<ConversationData> fetchMessageHistory(@PathVariable("from") String from, @PathVariable("to") String to) {
+        return messageService.fetchHistoryMessages(from, to);
+    }
 
     @RequestMapping(method = RequestMethod.GET, value = {"/home", "/", "/register", "/user", "/login"})
     public String Home() {

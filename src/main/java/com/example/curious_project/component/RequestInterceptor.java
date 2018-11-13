@@ -29,11 +29,15 @@ public class RequestInterceptor extends HandlerInterceptorAdapter {
         this.unAuthenticatedUrls.add("/login");
         this.unAuthenticatedUrls.add("/home");
         this.unAuthenticatedUrls.add("/");
-//        this.unAuthenticatedUrls.add("/intro");
-//        this.unAuthenticatedUrls.add("/user");
     }
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if(unAuthenticatedUrls.contains(request.getRequestURI()) && request.getMethod().equals("GET")) {
+            return true;
+        }
+        if (request.getRequestURI().contains("message")) {
+            System.out.println("caught");
+        }
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type, *");
         Cookie cookie[] = request.getCookies();
@@ -51,10 +55,6 @@ public class RequestInterceptor extends HandlerInterceptorAdapter {
         if (userEmail != null && !userEmail.equals("")) {
             request.setAttribute("userEmail" ,userEmail);
             request.setAttribute("jwt", jwt);
-            return true;
-        }
-
-        if(unAuthenticatedUrls.contains(request.getRequestURI()) && request.getMethod().equals("GET")) {
             return true;
         }
 

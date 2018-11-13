@@ -53,7 +53,7 @@ module.exports = {
           port : 9000,
           proxy : {
               '/': {
-                  target : 'http://localhost:8189',
+                  target : 'http://localhost:8185',
                   pathRewrite: { '^/': '' },
                   secure: false
               }

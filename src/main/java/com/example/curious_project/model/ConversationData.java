@@ -14,6 +14,26 @@ public class ConversationData {
 
     String sender;
 
+    String receiver;
+
+    public ConversationData(String identifier, String message, String sender, String receiver) {
+        this.identifier = identifier;
+        this.message = message;
+        this.sender = sender;
+        this.receiver = receiver;
+    }
+
+    public ConversationData() {
+    }
+
+    public String getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(String receiver) {
+        this.receiver = receiver;
+    }
+
     public String getIdentifier() {
         return identifier;
     }

@@ -1,8 +1,27 @@
 <template>
-  <div class="container">
+  <div class="container" v-on:click="onUserContainerClick">
     <div class="header">
+      <div class="search">
+      <input class="search-input-box" v-on:keyup.enter="sendSearchRequest" v-model="searchText"  placeholder="Search For Person">
+        <div class="card-container" v-on:click="onCardContainerClick" v-if="showDropDown">
+          <template v-if="searchResult.length>0" v-for="result in searchResult">
+            <PersonCard v-bind:person="result"></PersonCard>
+          </template>
+          <p class="not-found" v-if="searchResult.length===0">No Person Found</p>
+        </div>
+      </input>
+      </div>
+      <img class="search-image" src="./assets/search-image.jpg" v-on:click="sendSearchRequest"></img>
       <span class="user-name">{{userData.name}}</span>
       <img class="profile-img" :src="userData.profilePic">
+      <div class="notification-container">
+        <img v-bind:class="{haveNotifications: userData.listOfRequestsReceived.length > 0}" class="notification-img" src="./assets/bell-icon.png" v-on:click="showNotifications">
+        <div class="request-container" v-if="userData.listOfRequestsReceived.length>0 && this.showRequests">
+          <template v-for="request in userData.listOfRequestsReceived">
+            <RequestCard v-bind:person="request"></RequestCard>
+          </template>
+        </div>
+      </div>
       <button class="logout" v-on:click="logout">Log Out</button>
     </div>
     <div class="content-div">
@@ -10,61 +29,84 @@
       </div>
       <div class="contacts-list">
         <p class="contacts-title">Your Contacts</p>
-        <template v-for="user in contacts">
-                <Contact v-bind:name=user></Contact>
-        </template>
+        <div class="chat-list">
+          <template v-for="contact in contacts">
+                  <Contact v-bind:contact=contact v-on:openChat="openChat"></Contact>
+          </template>
+        </div>
+
+        <div class="chat-box-container">
+          <template v-for="liveChat in liveChatsOpened">
+            <ChatBox v-on:closeChat="closeChat(liveChat)" v-bind:chats="findChats(liveChat)" v-bind:contact="liveChat" v-on:sendWebSocketMessage="sendWebSocketMessage"></ChatBox>
+          </template>
+        </div>
       </div>
     </div>
-    <!--div class="other-profile" >
-      <input class="search-box" placeholder="Search Result" v-on:keyup.enter="sendSearchText" v-model="searchText"></input>
-      <img class="random-img" :src="randomPic" v-bind:class="{ hide: !searchResult, show: searchResult }">
-      <div class="buttons" v-bind:class="{ hide: !searchResult, show: searchResult }">
-        <button>Add Friend</button>
-        <button>Ignore</button>
-        <button v-on:click="message">Message</button>
-      </div>
-    </div>
-    <div class="chat-container">
-      <template v-for="user in openChats">
-        <chatBox v-bind:id="user">{{user}}</chatBox>
-      </template>
-    </div-->
   </div>
 </template>
 <script>
-import chatBox from "./chat-box.vue";
+import ChatBox from "./ChatBox.vue";
 import Contact from "./Contact.vue";
+import PersonCard from "./PersonCard.vue";
+import RequestCard from "./RequestCard.vue";
 export default {
   components: {
-          'chatBox': chatBox,
-          'Contact': Contact
+          'ChatBox': ChatBox,
+          'Contact': Contact,
+          'PersonCard': PersonCard,
+          'RequestCard': RequestCard
       },
   mounted () {
     this.userData.name = this.$store.state.userData.name;
     this.userData.email = this.$store.state.userData.email;
     this.userData.profilePic = this.$store.state.userData.profilePic;
-    this.ws = new WebSocket("wss://a0d360fe.ngrok.io/message");
+    this.userData.listOfRequestsReceived = this.$store.state.userData.listOfRequestsReceived;
+    this.contacts = this.$store.state.contacts;
+    this.ws = new WebSocket("ws://localhost:8185/message");
     this.$store.commit('assignWebSocket', this.ws);
     window._this = this;
     this.ws.onopen = function(data){
-      _this.sendSubscriptionMessage();
+      console.log("websocket connection opened");
     };
-    this.ws.onmessage = function(data) {
-      var dataObject = JSON.parse(data.data);
-      var senderEmail = dataObject.from;
-      _this.senderEmail = senderEmail;
-      _this.dataObject = dataObject;
-      if (!_this.openChats.includes(senderEmail)) {
-        _this.createMessageBox(senderEmail);
-        setTimeout(function(){
-           _this.fetchMessageHistory(_this.senderEmail, _this.userData.email);
-        }, 0);
-        return;
-      }
-      if ("history" in dataObject) {
-          _this.prependMessageToChatBox(senderEmail, dataObject.chatFrom, dataObject.message);
-      } else {
-          _this.appendMessageToChatBox(senderEmail, dataObject.message);
+    this.ws.onmessage = (data) => {
+      let jsonData = JSON.parse(data.data);
+      if (jsonData.topic === "chat") {
+        let contactEmail = jsonData.from === this.userData.email ? jsonData.to : jsonData.from;
+        let contact = this.contacts.find((contact)=>{
+          return contact.userEmail === contactEmail;
+        })
+        let liveMessage = {};
+        liveMessage["sender"] = jsonData.from;
+        liveMessage["receiver"] = jsonData.to;
+        liveMessage["message"] = jsonData.message;
+        this.openChat(contact, liveMessage);
+      } else if (jsonData.topic === "friendRequestSent") {
+        var request = {
+                        userEmail : jsonData.from,
+                        userName : jsonData.requestSentFromUserName
+                      }
+        this.userData.listOfRequestsReceived.unshift(request);
+      } else if (jsonData.topic === "friendRequestCancelled") {
+        let requestCancelledEmail = jsonData.requestCancelledForUser;
+        this.userData.listOfRequestsReceived = this.userData.listOfRequestsReceived.filter((request)=>{
+          return request.userEmail != requestCancelledEmail;
+        });
+        if (this.userData.listOfRequestsReceived.length === 0) {
+          this._data.showRequests = false;
+        }
+      } else if (jsonData.topic === "friendRequestAccepted") {
+        let requestAcceptedEmail = jsonData.requestAcceptedForUserEmail;
+        this.userData.listOfRequestsReceived = this.userData.listOfRequestsReceived.filter((request)=>{
+          return request.userEmail != requestAcceptedEmail;
+        });
+        if (this.userData.listOfRequestsReceived.length === 0) {
+          this._data.showRequests = false;
+        }
+        this.contacts.push({userEmail: requestAcceptedEmail, userName: jsonData.requestAcceptedForUserName});
+      } else if(jsonData.topic === "addContact"){
+        this.contacts.push({userEmail: jsonData.requestAcceptedBy, userName: jsonData.requestAcceptedByUserName})
+      }else {
+
       }
     }
   },
@@ -72,64 +114,93 @@ export default {
     logout(){
       let _this = this;
       this.$http.put('/logout', {}, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
-          console.log(data.body);
           _this.ws.close();
           _this.$router.push({path:'/login'});
         }).catch(function (err) {
           console.log("User could not be logged out");
         });
       },
-    sendSubscriptionMessage(){
-        var message = {"messageType":"subscription","from":this.userData.email};
-        this.ws.send(JSON.stringify(message));
-    },
-    fetchMessageHistory(from, to){
-        var message = {"messageType":"history", "from": from, "to": to, "for": from};
-        this.ws.send(JSON.stringify(message));
-    },
-    sendSearchText(){
-      var _this = this;
-      var postData = {
-        name: this.searchText
-      };
-      this.$http.post('/search', postData, {}).then(function(data) { //first parameter is address , second parameter is body to be sent and in the third parameter we can send headers
-        _this.randomPic = data.body.imageLink;
-        _this.randomEmail = data.body.email;
-        _this.searchResult = true;
-      }).catch(function (err) {
-        console.log("user could not sign up");
+    sendSearchRequest() {
+      this.$http.get('/searchPerson/' + this._data.searchText, {}, {}).then((result)=>{
+        this._data.showDropDown = true;
+        this._data.searchResult = result.body;
+      }).catch((error)=>{
+        console.log("Error occurred while fetching results");
       });
     },
-    message(){
-      if (!this.openChats.includes(this.randomEmail)) {
-        this.openChats.push(this.randomEmail);
-        _this = this;
-        setTimeout(function(){
-           _this.fetchMessageHistory(_this.randomEmail, _this.userData.email);
-        }, 0);
-      }
+    showNotifications() {
+      this.showRequests = this.showRequests === true ? false : true;
     },
-    createMessageBox(email){
-      this.openChats.push(email);
+    onCardContainerClick(event) {
+      event.stopPropagation();
     },
-    appendMessageToChatBox(email, message){
-      var chatContainer = document.getElementById(email).firstChild;
-      var pText = document.createElement("p");;
-      pText.textContent = email + ":" + message;
-      chatContainer.appendChild(pText);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    onUserContainerClick(event) {
+      this._data.showDropDown = false;
     },
-    prependMessageToChatBox(email, chatFrom, message){
-      var chatContainer = document.getElementById(email).firstChild;
-      var pText = document.createElement("p");;
-      pText.textContent = chatFrom + ":" + message;
-      if (!chatContainer.firstChild) {
-        chatContainer.appendChild(pText);
+    openChat(contact, liveMessage) {
+      let liveChatOpened = this.liveChatsOpened.find((liveChats)=>{
+        return liveChats.userEmail === contact.userEmail;
+      });
+      if (liveChatOpened === undefined) {
+        if (Object.keys(this.chatDataByUserEmail).indexOf(contact.userEmail) === -1) {
+          this.fetchMessageHistoryAsynchronously(this.userData.email, contact.userEmail).then((data)=>{
+            this.chatDataByUserEmail[contact.userEmail] = {};
+            this.chatDataByUserEmail[contact.userEmail].chats = data.body;
+            this.liveChatsOpened.push(contact);
+            setTimeout(()=>{
+              var chatDiv = document.getElementById(contact.userEmail);
+              chatDiv.scrollTop = chatDiv.scrollHeight;
+            },0);
+          }).catch((error)=>{
+            console.log("consoling the error", error);
+          });
+        } else {
+          this.liveChatsOpened.push(contact);
+          if (liveMessage) {
+            this.chatDataByUserEmail[contact.userEmail].chats.push(liveMessage);
+          }
+          setTimeout(()=>{
+            var chatDiv = document.getElementById(contact.userEmail);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+          },0);
+        }
       } else {
-        chatContainer.insertBefore(pText, chatContainer.firstChild);
+        if (liveMessage) {
+          this.chatDataByUserEmail[contact.userEmail].chats.push(liveMessage);
+        }
+        setTimeout(()=>{
+          var chatDiv = document.getElementById(contact.userEmail);
+          chatDiv.scrollTop = chatDiv.scrollHeight;
+        },0);
       }
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    },
+    fetchMessageHistoryAsynchronously(from, to) {
+      return this.$http.get("/fetchMessageHistory/" + from + "/" + to, {}, {});
+    },
+    sendWebSocketMessage(data) {
+      var payload = {
+        from: this.userData.email,
+        to: data.userEmail,
+        topic: "chat",
+        message: data.message
+      };
+      this.ws.send(JSON.stringify(payload));
+    },
+    findChats(contact) {
+      let chats = this.findChatsByUserEmail(contact.userEmail);
+      return chats;
+    },
+    findChatsByUserEmail(email) {
+      let userChatData = this.chatDataByUserEmail[email];
+      return userChatData.chats;
+    },
+    closeChat(contact) {
+      var index = this.liveChatsOpened.indexOf(contact);
+      if (index > -1) {
+        this.liveChatsOpened.splice(index, 1);
+      }
     }
+
   },
   data() {
     return {
@@ -137,7 +208,8 @@ export default {
         name: "",
         email: "",
         profilePic: "",
-        chatInput: ""
+        chatInput: "",
+        listOfRequestsReceived: []
       },
       client: "",
       destination: "",
@@ -147,7 +219,12 @@ export default {
       randomPic: "",
       randomEmail: "",
       openChats: [],
-      contacts: [ "Sachin", "Dhoni"]
+      searchResult: [],
+      contacts: [],
+      showDropDown: false,
+      showRequests: false,
+      liveChatsOpened: [],
+      chatDataByUserEmail: {}
     }
   }
 
@@ -162,11 +239,62 @@ export default {
 }
 
 .header {
-  background: #283e4a;
+  background: #777;
   display: flex;
   box-sizing: border-box;
   flex-grow: 0;
-  padding: 10px 20% 10px 20%;
+  padding: 10px 10% 10px 10%;
+  align-items: center;
+  min-height: 80px;
+  max-height: 80px;
+}
+
+.search {
+  position: relative;
+}
+
+.search-input-box {
+  height: 40px;
+  border-radius: 2px;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  box-sizing: border-box;
+  padding: 10px;
+  min-width: 100px;
+}
+
+.card-container {
+  position: absolute;
+  width: 100%;
+  background-color: white;
+  padding: 5px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  border: solid 1px black;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-image {
+  height: 30px;
+  width: 30px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.notification-img{
+  height: 30px;
+  min-width: 30px;
+  position : relative;
+  margin-left: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  position: relative;
+}
+
+.haveNotifications {
+  background-color: yellow;
 }
 
 .logout {
@@ -185,14 +313,18 @@ export default {
   color: white;
   flex-grow: 20;
   text-align: right;
-  padding-right: 10px
+  padding-right: 10px;
 }
 
 
 .profile-img {
-  height: 60px;
-  width: 60px;
+  height: 40px;
+  width: 40px;
   border-radius: 10px;
+}
+
+.not-found {
+  margin: 0px;
 }
 
 .content-div {
@@ -209,15 +341,11 @@ export default {
   flex-grow: 1;
   flex-basis: 200px;
   max-width: 200px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
-.contacts-title {
-  margin: 0px;
-  padding: 5px;
-  font-weight: 600;
-  text-align: center;
-  border-bottom: solid 1px black;
-}
 
 .contact {
 }
@@ -263,12 +391,8 @@ button {
   width: 400px;
 }
 
-.search-box {
-  width: 80%;
-  font-size: 20px;
-  outline: none;
-  margin-bottom: 10px;
-}
+
+
 
 .message-box {
   width: 100%;
@@ -288,4 +412,43 @@ button {
   display: inline-block;
 }
 
+
+.request-container {
+  position: absolute;
+  border: solid 1px black;
+  border-radius: 4px;
+  left: 10px;
+  padding: 5px;
+  background-color: yellow;
+  width: 350%;
+  box-sizing: border-box;
+}
+
+.notification-container {
+  position: relative;
+  height: 30px;
+  width: 30px;
+  margin-right: 10px;
+}
+
+.contacts-title {
+  margin: 0px;
+  padding: 5px;
+  font-weight: 600;
+  text-align: center;
+  background-color: darkgrey;
+}
+
+
+.chat-list {
+  overflow: scroll;
+  box-sizing: border-box;
+  max-height: 150px;
+  min-height: 150px;
+}
+
+.chat-box-container {
+  flex-grow: 1;
+  overflow: scroll;
+}
 </style>

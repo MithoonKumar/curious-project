@@ -20,5 +20,3 @@ new Vue({
   render: h => h(App),
   router: router
 })
-
-console.log("hesdsdllo");

@@ -11,44 +11,19 @@ public class User {
     @Id
     String userEmail;
 
-    String hashedPwd;
+    String userName;
 
-    String firstName;
-
-    String lastName;
-
-    String imageLink;
-
-    public String getImageLink() {
-        return imageLink;
+    public User(String userEmail, String userName) {
+        this.userEmail = userEmail;
+        this.userName = userName;
     }
 
-    public void setImageLink(String imageLink) {
-        this.imageLink = imageLink;
+    public String getUserName() {
+        return userName;
     }
 
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getHashedPwd() {
-        return hashedPwd;
-    }
-
-    public void setHashedPwd(String hashedPwd) {
-        this.hashedPwd = hashedPwd;
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public String getUserEmail() {

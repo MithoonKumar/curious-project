@@ -115,16 +115,4 @@ export default {
   text-decoration: none;
 }
 
-.toast {
-  text-align: center;
-  background: lightyellow;
-  display: inline-block;
-  border-radius: 10px;
-  position: absolute;
-  padding: 10px;
-  bottom: 100px;
-  transform: translateX(-50%);
-  left: 50%;
-}
-
 </style>

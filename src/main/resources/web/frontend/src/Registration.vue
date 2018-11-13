@@ -13,13 +13,32 @@
         <input id="profile-pic" type="file" @change="onFileChange($event.target.files)" name="profilePic" accept="image/*">
         <input class="submit-button" type="button" v-on:click="signUp" value="Agree & Join">
     </div>
+    <Toast v-bind:message=message v-if="showToast" ></Toast>
   </div>
 </template>
 
 <script>
+import Toast from "./Toast.vue";
 export default {
+  components: {
+    'Toast': Toast
+  },
   methods: {
     signUp: function() {
+      if (this.firstName === "" || this.lastName === "" || this.userEmail === "" || this.userPwd === "" || this.formData === "")
+      {
+        this.showToast = true;
+        setTimeout(()=>{ this.showToast = false;}, 3000);
+        return;
+      }
+
+      if (this.userEmail != "" && this.userEmail.indexOf('@') === -1) {
+        this.message = "Email is not in proper format";
+        this.showToast = true;
+        setTimeout(()=>{ this.showToast = false; this.message = "All fields are mandatory"}, 3000);
+        return;
+      }
+
       var postData = {
         firstName: this.firstName,
         lastName: this.lastName,
@@ -48,7 +67,9 @@ export default {
       userPwd: "",
       firstName: "",
       lastName: "",
-      formData: ""
+      formData: "",
+      showToast: false,
+      message: "All fields are mandatory"
     }
   }
 }
@@ -57,6 +78,7 @@ export default {
 <style scoped>
 .container {
   background: -webkit-linear-gradient(45deg, #0077b5,#008891);
+  background: -webkit-linear-gradient(45deg, white,black);
   height: 100%;
   width: 100%;
 }
