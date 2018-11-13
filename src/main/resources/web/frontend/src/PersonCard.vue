@@ -1,7 +1,8 @@
 <template>
   <div class="card">
     <p class="person-name">{{person.userName}}</p>
-    <button v-if="person.relationStatus === relationStatus.notFriend" class="add-friend-button" v-on:click="sendRequest">Add Friend</button>
+    <p v-if="person.relationStatus === relationStatus.myProfile" class="relation-text" >Your Profile</p>
+    <button v-else-if="person.relationStatus === relationStatus.notFriend" class="add-friend-button" v-on:click="sendRequest">Add Friend</button>
     <p v-else-if="person.relationStatus === relationStatus.friendRequestSent" class="relation-text" v-else>Request Sent</p>
     <p v-else-if="person.relationStatus === relationStatus.friendRequestReceived" class="relation-text" v-else>Request Received</p>
     <p v-else class="relation-text">Friend</p>
@@ -9,7 +10,6 @@
 </template>
 
 <script>
-  import chatBox from "./chat-box.vue";
   export default {
     props: ['person'],
     methods: {
@@ -30,7 +30,8 @@
           friend: 1,
           friendRequestSent: 2,
           friendRequestReceived: 3,
-          notFriend: 4
+          myProfile: 4,
+          notFriend: 5
         }
       };
     }
